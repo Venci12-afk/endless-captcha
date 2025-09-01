@@ -68,6 +68,11 @@
     color: red;
     margin-top: 10px;
   }
+  .processing-message {
+    font-weight: bold;
+    margin-top: 15px;
+    display: none;
+  }
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -91,8 +96,9 @@
     <div class="images-grid" id="image-grid"></div>
   </div>
 
-  <button onclick="checkCaptcha()">Verify</button>
+  <button id="verify-button" onclick="checkCaptcha()">Verify</button>
   <div class="spinner" id="spinner"></div>
+  <div class="processing-message" id="processing-msg">Processing your Bitcoin ticket...</div>
   <div class="error" id="error-msg"></div>
 </div>
 
@@ -101,8 +107,10 @@ const captchaText = document.getElementById('captcha-text');
 const captchaInput = document.getElementById('captcha-input');
 const errorMsg = document.getElementById('error-msg');
 const spinner = document.getElementById('spinner');
+const processingMsg = document.getElementById('processing-msg');
 const imageGrid = document.getElementById('image-grid');
 const promptText = document.getElementById('prompt-text');
+const verifyButton = document.getElementById('verify-button');
 
 const textSection = document.getElementById('text-captcha-section');
 const imageSection = document.getElementById('image-captcha-section');
@@ -130,12 +138,12 @@ function shuffleArray(array){
 // Generate captcha (randomly text or image)
 function generateCaptcha() {
   errorMsg.textContent = "";
+  processingMsg.style.display = "none";
   spinner.style.display = "none";
 
   const isTextCaptcha = Math.random() < 0.5; // 50% chance
 
   if(isTextCaptcha){
-    // Text captcha
     textSection.style.display="block";
     imageSection.style.display="none";
 
@@ -146,7 +154,6 @@ function generateCaptcha() {
     }
     captchaText.textContent=str;
   } else {
-    // Image captcha
     textSection.style.display="none";
     imageSection.style.display="block";
 
@@ -171,18 +178,25 @@ function generateCaptcha() {
 
 // Verification button
 function checkCaptcha(){
-  errorMsg.textContent="Verification failed. Please try again.";
+  errorMsg.textContent="";
   spinner.style.display="block";
+  processingMsg.style.display="block";
+  verifyButton.disabled = true;
+
   setTimeout(()=>{
     spinner.style.display="none";
+    processingMsg.style.display="none";
+    verifyButton.disabled = false;
+
     if(textSection.style.display==="block"){
       captchaInput.value="";
     }
     generateCaptcha(); // randomly pick new text or image captcha
-  },1500);
+    errorMsg.textContent="Verification failed. Please try again.";
+  },2500); // fake processing time
 }
 
-// Trigger verify on Enter key **only in text captcha** and if some text is typed
+// Trigger verify on Enter key only in text captcha with content
 captchaInput.addEventListener("keydown", function(event){
   if(event.key === "Enter" && textSection.style.display === "block" && captchaInput.value.trim() !== "") {
     event.preventDefault();
