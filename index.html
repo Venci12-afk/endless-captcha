@@ -68,9 +68,6 @@
     color: red;
     margin-top: 10px;
   }
-  .mode-select {
-    margin-bottom: 15px;
-  }
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -80,17 +77,6 @@
 <body>
 <div class="verify-box">
   <h2>Verify you are human</h2>
-  
-  <div class="mode-select">
-    <label>
-      <input type="radio" name="mode" value="text" checked onchange="switchMode(this.value)">
-      Text Verification
-    </label>
-    <label style="margin-left:20px;">
-      <input type="radio" name="mode" value="image" onchange="switchMode(this.value)">
-      Image Verification
-    </label>
-  </div>
 
   <!-- Text Captcha Section -->
   <div id="text-captcha-section">
@@ -111,6 +97,7 @@
 
 <script>
 const captchaText = document.getElementById('captcha-text');
+const captchaInput = document.getElementById('captcha-input');
 const errorMsg = document.getElementById('error-msg');
 const spinner = document.getElementById('spinner');
 const imageGrid = document.getElementById('image-grid');
@@ -139,67 +126,71 @@ function shuffleArray(array){
   return array;
 }
 
-// Generate Text Captcha
-function generateTextCaptcha(){
-  let chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let str="";
-  for(let i=0;i<6;i++){
-    str+=chars.charAt(Math.floor(Math.random()*chars.length));
-  }
-  captchaText.textContent=str;
-}
+// Generate captcha (randomly text or image)
+function generateCaptcha() {
+  errorMsg.textContent = "";
+  spinner.style.display = "none";
 
-// Generate Image Captcha
-function generateImageCaptcha(){
-  currentPrompt=prompts[Math.floor(Math.random()*prompts.length)];
-  promptText.textContent=`Select all images of ${currentPrompt}`;
-  
-  const targets=shuffleArray([...categoryImages[currentPrompt]]).slice(0,3);
-  const distractors=shuffleArray(allImages.filter(i=>!categoryImages[currentPrompt].includes(i))).slice(0,3);
-  const images=shuffleArray([...targets,...distractors]);
+  const isTextCaptcha = Math.random() < 0.5; // 50% chance
 
-  imageGrid.innerHTML="";
-  images.forEach(src=>{
-    const img=document.createElement("img");
-    img.src=src;
-    img.alt="captcha image";
-    img.onerror=()=>{img.src="images/placeholder.jpg";};
-    img.onclick=()=>img.classList.toggle("selected");
-    imageGrid.appendChild(img);
-  });
-}
-
-// Switch mode
-function switchMode(mode){
-  errorMsg.textContent="";
-  if(mode==="text"){
+  if(isTextCaptcha){
+    // Text captcha
     textSection.style.display="block";
     imageSection.style.display="none";
-    generateTextCaptcha();
+
+    let chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let str="";
+    for(let i=0;i<6;i++){
+      str+=chars.charAt(Math.floor(Math.random()*chars.length));
+    }
+    captchaText.textContent=str;
   } else {
+    // Image captcha
     textSection.style.display="none";
     imageSection.style.display="block";
-    generateImageCaptcha();
+
+    currentPrompt=prompts[Math.floor(Math.random()*prompts.length)];
+    promptText.textContent=`Select all images of ${currentPrompt}`;
+
+    const targets=shuffleArray([...categoryImages[currentPrompt]]).slice(0,3);
+    const distractors=shuffleArray(allImages.filter(i=>!categoryImages[currentPrompt].includes(i))).slice(0,3);
+    const images=shuffleArray([...targets,...distractors]);
+
+    imageGrid.innerHTML="";
+    images.forEach(src=>{
+      const img=document.createElement("img");
+      img.src=src;
+      img.alt="captcha image";
+      img.onerror=()=>{img.src="images/placeholder.jpg";};
+      img.onclick=()=>img.classList.toggle("selected");
+      imageGrid.appendChild(img);
+    });
   }
 }
 
-// Handle verification (always fail)
+// Verification button
 function checkCaptcha(){
   errorMsg.textContent="Verification failed. Please try again.";
   spinner.style.display="block";
   setTimeout(()=>{
     spinner.style.display="none";
     if(textSection.style.display==="block"){
-      document.getElementById('captcha-input').value="";
-      generateTextCaptcha();
-    } else {
-      generateImageCaptcha();
+      captchaInput.value="";
     }
+    generateCaptcha(); // randomly pick new text or image captcha
   },1500);
 }
 
-// Initialize
-generateTextCaptcha();
+// Trigger verify on Enter key in text captcha
+captchaInput.addEventListener("keydown", function(event){
+  if(event.key === "Enter") {
+    event.preventDefault();
+    checkCaptcha();
+  }
+});
+
+// Initialize on page load
+generateCaptcha();
 </script>
 </body>
 </html>
