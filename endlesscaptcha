@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secure Login Portal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .login-box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      width: 300px;
+      text-align: center;
+    }
+    input {
+      width: 90%;
+      padding: 8px;
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px;
+      width: 100%;
+      background: #0073e6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .captcha {
+      margin: 10px 0;
+      background: #eee;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 18px;
+      user-select: none;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>Secure Login</h2>
+    <input type="text" placeholder="Username">
+    <input type="password" placeholder="Password">
+    
+    <div class="captcha" id="captcha-text"></div>
+    <input type="text" id="captcha-input" placeholder="Enter captcha">
+    
+    <button onclick="checkCaptcha()">Login</button>
+    <div class="error" id="error-msg"></div>
+  </div>
+
+  <script>
+    const captchaText = document.getElementById('captcha-text');
+    const errorMsg = document.getElementById('error-msg');
+
+    function generateCaptcha() {
+      let chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let str = "";
+      for (let i = 0; i < 6; i++) {
+        str += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      captchaText.textContent = str;
+    }
+
+    function checkCaptcha() {
+      let input = document.getElementById('captcha-input').value;
+      if (input !== captchaText.textContent) {
+        errorMsg.textContent = "Captcha incorrect. Please try again.";
+      } else {
+        errorMsg.textContent = "Captcha incorrect. Please try again."; 
+      }
+      generateCaptcha(); // Always generate a new one
+    }
+
+    generateCaptcha();
+  </script>
+</body>
+</html>
