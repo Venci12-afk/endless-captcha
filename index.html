@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Secure Login Portal</title>
+  <title>Human Verification</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,18 +12,13 @@
       align-items: center;
       height: 100vh;
     }
-    .login-box {
+    .verify-box {
       background: white;
-      padding: 20px;
+      padding: 25px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      width: 300px;
+      width: 400px;
       text-align: center;
-    }
-    input {
-      width: 90%;
-      padding: 8px;
-      margin: 10px 0;
     }
     button {
       padding: 10px;
@@ -33,55 +28,122 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
+      margin-top: 15px;
     }
     .captcha {
-      margin: 10px 0;
+      margin: 15px 0;
       background: #eee;
-      padding: 10px;
+      padding: 12px;
       font-family: monospace;
-      font-size: 18px;
+      font-size: 20px;
       user-select: none;
     }
     .error {
       color: red;
       margin-top: 10px;
     }
+    .images-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      margin: 15px 0;
+    }
+    .images-grid img {
+      width: 100%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 5px;
+    }
+    .images-grid img.selected {
+      border-color: #0073e6;
+    }
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #0073e6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
-  <div class="login-box">
-    <h2>Secure Login</h2>
-    <input type="text" placeholder="Username">
-    <input type="password" placeholder="Password">
+  <div class="verify-box">
+    <h2>Verify you are human</h2>
+    <p id="prompt-text">To redeem your Bitcoin, complete the captcha below:</p>
     
     <div class="captcha" id="captcha-text"></div>
-    <input type="text" id="captcha-input" placeholder="Enter captcha">
+    <input type="text" id="captcha-input" placeholder="Enter the text above">
     
-    <button onclick="checkCaptcha()">Login</button>
+    <div class="images-grid" id="image-grid"></div>
+    
+    <button onclick="checkCaptcha()">Verify</button>
     <div class="error" id="error-msg"></div>
+    
+    <div class="spinner" id="spinner"></div>
   </div>
 
   <script>
     const captchaText = document.getElementById('captcha-text');
     const errorMsg = document.getElementById('error-msg');
+    const spinner = document.getElementById('spinner');
+    const imageGrid = document.getElementById('image-grid');
+    const promptText = document.getElementById('prompt-text');
+
+    const prompts = [
+      "Select all images with traffic lights",
+      "Select all images with crosswalks",
+      "Select all images with bicycles",
+      "Select all images with cars",
+      "Select all images with trees"
+    ];
+
+    const imageSets = [
+      ["https://via.placeholder.com/100?text=1","https://via.placeholder.com/100?text=2","https://via.placeholder.com/100?text=3","https://via.placeholder.com/100?text=4","https://via.placeholder.com/100?text=5","https://via.placeholder.com/100?text=6"],
+      ["https://via.placeholder.com/100?text=A","https://via.placeholder.com/100?text=B","https://via.placeholder.com/100?text=C","https://via.placeholder.com/100?text=D","https://via.placeholder.com/100?text=E","https://via.placeholder.com/100?text=F"],
+      ["https://via.placeholder.com/100?text=G","https://via.placeholder.com/100?text=H","https://via.placeholder.com/100?text=I","https://via.placeholder.com/100?text=J","https://via.placeholder.com/100?text=K","https://via.placeholder.com/100?text=L"]
+    ];
 
     function generateCaptcha() {
+      // Text captcha
       let chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       let str = "";
       for (let i = 0; i < 6; i++) {
         str += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       captchaText.textContent = str;
+
+      // Random photo prompt
+      const promptIndex = Math.floor(Math.random() * prompts.length);
+      promptText.textContent = prompts[promptIndex];
+
+      // Random image set
+      const images = imageSets[Math.floor(Math.random() * imageSets.length)];
+      imageGrid.innerHTML = "";
+      images.forEach(src => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.onclick = () => img.classList.toggle("selected");
+        imageGrid.appendChild(img);
+      });
     }
 
     function checkCaptcha() {
-      let input = document.getElementById('captcha-input').value;
-      if (input !== captchaText.textContent) {
-        errorMsg.textContent = "Captcha incorrect. Please try again.";
-      } else {
-        errorMsg.textContent = "Captcha incorrect. Please try again."; 
-      }
-      generateCaptcha(); // Always generate a new one
+      // Always fail them
+      errorMsg.textContent = "Captcha incorrect. Please try again.";
+      document.getElementById('captcha-input').value = "";
+      spinner.style.display = "block";
+      setTimeout(() => { 
+        spinner.style.display = "none";
+        generateCaptcha(); 
+      }, 1500);
     }
 
     generateCaptcha();
