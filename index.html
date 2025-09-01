@@ -17,7 +17,7 @@
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    width: 400px;
+    width: 420px;
     text-align: center;
   }
   button {
@@ -31,17 +31,13 @@
     font-size: 16px;
     margin-top: 15px;
   }
-  .captcha {
+  .captcha-text {
     margin: 15px 0;
     background: #eee;
     padding: 12px;
     font-family: monospace;
     font-size: 20px;
     user-select: none;
-  }
-  .error {
-    color: red;
-    margin-top: 10px;
   }
   .images-grid {
     display: grid;
@@ -68,6 +64,13 @@
     margin: 20px auto;
     display: none;
   }
+  .error {
+    color: red;
+    margin-top: 10px;
+  }
+  .mode-select {
+    margin-bottom: 15px;
+  }
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -77,16 +80,33 @@
 <body>
 <div class="verify-box">
   <h2>Verify you are human</h2>
-  <p id="prompt-text">To redeem your Bitcoin, complete the captcha below:</p>
+  
+  <div class="mode-select">
+    <label>
+      <input type="radio" name="mode" value="text" checked onchange="switchMode(this.value)">
+      Text Verification
+    </label>
+    <label style="margin-left:20px;">
+      <input type="radio" name="mode" value="image" onchange="switchMode(this.value)">
+      Image Verification
+    </label>
+  </div>
 
-  <div class="captcha" id="captcha-text"></div>
-  <input type="text" id="captcha-input" placeholder="Enter the text above">
+  <!-- Text Captcha Section -->
+  <div id="text-captcha-section">
+    <div class="captcha-text" id="captcha-text"></div>
+    <input type="text" id="captcha-input" placeholder="Enter the text above">
+  </div>
 
-  <div class="images-grid" id="image-grid"></div>
+  <!-- Image Captcha Section -->
+  <div id="image-captcha-section" style="display:none;">
+    <p id="prompt-text"></p>
+    <div class="images-grid" id="image-grid"></div>
+  </div>
 
   <button onclick="checkCaptcha()">Verify</button>
-  <div class="error" id="error-msg"></div>
   <div class="spinner" id="spinner"></div>
+  <div class="error" id="error-msg"></div>
 </div>
 
 <script>
@@ -96,6 +116,9 @@ const spinner = document.getElementById('spinner');
 const imageGrid = document.getElementById('image-grid');
 const promptText = document.getElementById('prompt-text');
 
+const textSection = document.getElementById('text-captcha-section');
+const imageSection = document.getElementById('image-captcha-section');
+
 // Categories with 6 images each
 const categoryImages = {
   trees: ["images/tree1.jpg","images/tree2.jpg","images/tree3.jpg","images/tree4.jpg","images/tree5.jpg","images/tree6.jpg"],
@@ -103,67 +126,81 @@ const categoryImages = {
   crosswalks: ["images/crosswalk1.jpg","images/crosswalk2.jpg","images/crosswalk3.jpg","images/crosswalk4.jpg","images/crosswalk5.jpg","images/crosswalk6.jpg"],
   traffic: ["images/traffic1.jpg","images/traffic2.jpg","images/traffic3.jpg","images/traffic4.jpg","images/traffic5.jpg","images/traffic6.jpg"]
 };
-
-// Flatten all images for distractors
 const allImages = Object.values(categoryImages).flat();
-
-// Prompts
-const prompts = ["trees", "bicycles", "crosswalks", "traffic"];
+const prompts = ["trees","bicycles","crosswalks","traffic"];
 let currentPrompt = "";
 
-// Shuffle function
-function shuffleArray(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+// Shuffle helper
+function shuffleArray(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
   }
   return array;
 }
 
-// Get 3 target + 3 distractor images
-function getRandomImagesForPrompt(promptCategory) {
-  const targets = shuffleArray([...categoryImages[promptCategory]]).slice(0, 3);
-  const distractors = shuffleArray(allImages.filter(i => !categoryImages[promptCategory].includes(i))).slice(0, 3);
-  return shuffleArray([...targets, ...distractors]);
+// Generate Text Captcha
+function generateTextCaptcha(){
+  let chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let str="";
+  for(let i=0;i<6;i++){
+    str+=chars.charAt(Math.floor(Math.random()*chars.length));
+  }
+  captchaText.textContent=str;
 }
 
-// Generate captcha and images
-function generateCaptcha() {
-  // Text captcha
-  let chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let str = "";
-  for (let i = 0; i < 6; i++) {
-    str += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  captchaText.textContent = str;
+// Generate Image Captcha
+function generateImageCaptcha(){
+  currentPrompt=prompts[Math.floor(Math.random()*prompts.length)];
+  promptText.textContent=`Select all images of ${currentPrompt}`;
+  
+  const targets=shuffleArray([...categoryImages[currentPrompt]]).slice(0,3);
+  const distractors=shuffleArray(allImages.filter(i=>!categoryImages[currentPrompt].includes(i))).slice(0,3);
+  const images=shuffleArray([...targets,...distractors]);
 
-  // Photo prompt
-  currentPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-  promptText.textContent = `Select all images of ${currentPrompt}`;
-
-  // Random 6 images
-  const selectedImages = getRandomImagesForPrompt(currentPrompt);
-  imageGrid.innerHTML = "";
-  selectedImages.forEach(src => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.onclick = () => img.classList.toggle("selected");
+  imageGrid.innerHTML="";
+  images.forEach(src=>{
+    const img=document.createElement("img");
+    img.src=src;
+    img.alt="captcha image";
+    img.onerror=()=>{img.src="images/placeholder.jpg";};
+    img.onclick=()=>img.classList.toggle("selected");
     imageGrid.appendChild(img);
   });
 }
 
-// Fail and regenerate captcha
-function checkCaptcha() {
-  errorMsg.textContent = "Captcha incorrect. Please try again.";
-  document.getElementById('captcha-input').value = "";
-  spinner.style.display = "block";
-  setTimeout(() => {
-    spinner.style.display = "none";
-    generateCaptcha();
-  }, 1500);
+// Switch mode
+function switchMode(mode){
+  errorMsg.textContent="";
+  if(mode==="text"){
+    textSection.style.display="block";
+    imageSection.style.display="none";
+    generateTextCaptcha();
+  } else {
+    textSection.style.display="none";
+    imageSection.style.display="block";
+    generateImageCaptcha();
+  }
 }
 
-generateCaptcha();
+// Handle verification (always fail)
+function checkCaptcha(){
+  errorMsg.textContent="Verification failed. Please try again.";
+  spinner.style.display="block";
+  setTimeout(()=>{
+    spinner.style.display="none";
+    if(textSection.style.display==="block"){
+      document.getElementById('captcha-input').value="";
+      generateTextCaptcha();
+    } else {
+      generateImageCaptcha();
+    }
+  },1500);
+}
+
+// Initialize
+generateTextCaptcha();
 </script>
 </body>
 </html>
+
